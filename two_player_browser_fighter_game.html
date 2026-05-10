@@ -136,11 +136,6 @@
       </select>
     </div>
 
-    <label style="margin-top:30px; font-size:22px; display:flex; align-items:center; gap:12px;">
-      <input type="checkbox" id="cpuToggle" checked style="transform:scale(1.5);">
-      Player 2 Controlled by CPU
-    </label>
-
     <div style="display:flex; gap:80px; margin-top:35px; flex-wrap:wrap; justify-content:center;">
       <div>
         <h2 style="margin-bottom:18px; text-align:center;">Player 1 Weapon</h2>
@@ -213,6 +208,15 @@
         animal: true,
         maxHealth: 40,
         speed: 4
+      },
+      bug: {
+        name: 'Bug',
+        color: '#4db84d',
+        headColor: '#66c2ff',
+        hair: '#1a1a1a',
+        animal: true,
+        maxHealth: 10,
+        speed: 2
       }
     };
     const floorHeight = 80;
@@ -294,7 +298,7 @@
 
           card.innerHTML = `
             <div style="font-size:56px; margin-bottom:8px;">
-              ${key === 'human' ? '🧍' : key === 'gorilla' ? '🦍' : key === 'tiger' ? '🐅' : '🦁'}
+              ${key === 'human' ? '🧍' : key === 'gorilla' ? '🦍' : key === 'tiger' ? '🐅' : key === 'lion' ? '🦁' : '🐛'}
             </div>
             ${character.name}
           `;
@@ -806,6 +810,65 @@
           ctx.lineTo(centerX + 20, bodyY + 82);
           ctx.stroke();
 
+        } else if (this.characterType === 'bug') {
+          ctx.fillStyle = this.character.color;
+          ctx.beginPath();
+          ctx.ellipse(centerX, bodyY + 24, 22, 28, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = this.character.headColor;
+          ctx.beginPath();
+          ctx.arc(centerX, headY + 4, 14, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#000';
+          ctx.beginPath();
+          ctx.arc(centerX - 5, headY, 3, 0, Math.PI * 2);
+          ctx.arc(centerX + 5, headY, 3, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = this.character.hair;
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(centerX - 4, headY - 10);
+          ctx.quadraticCurveTo(centerX - 10, headY - 20, centerX - 14, headY - 26);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + 4, headY - 10);
+          ctx.quadraticCurveTo(centerX + 10, headY - 20, centerX + 14, headY - 26);
+          ctx.stroke();
+
+          ctx.strokeStyle = this.character.hair;
+          ctx.lineWidth = 4;
+          const legOffset = Math.sin(Date.now() / 150) * 3;
+
+          for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(centerX - 16, bodyY + 12 + i * 6);
+            ctx.lineTo(centerX - 28 + legOffset, bodyY + 32 + i * 6);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(centerX + 16, bodyY + 12 + i * 6);
+            ctx.lineTo(centerX + 28 - legOffset, bodyY + 32 + i * 6);
+            ctx.stroke();
+          }
+
+          const mandibleExtend = this.isAttacking ? 15 : 0;
+          ctx.strokeStyle = this.character.hair;
+          ctx.lineWidth = 3;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - 6, headY + 8);
+          ctx.lineTo(centerX - 6 - mandibleExtend * this.facingDirection, headY + 14);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + 6, headY + 8);
+          ctx.lineTo(centerX + 6 - mandibleExtend * this.facingDirection, headY + 14);
+          ctx.stroke();
+
         } else {
           // BIG CATS (TIGER / LION)
           ctx.fillStyle = this.character.headColor;
@@ -1000,6 +1063,7 @@
       player2.coins = 0;
 
       updateHealthBars();
+      updateCoinDisplays();
       player2.color = characterTypes[selectedP2].color;
       player2.isCPU = cpuEnabled;
 
@@ -1062,8 +1126,6 @@
         <small>Refresh the page to play again</small>
       `;
     }
-
-    document.getElementById('startButton').addEventListener('click', startGame);
 
     window.addEventListener('keydown', (e) => {
       keys[e.key] = true;
