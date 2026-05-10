@@ -271,39 +271,131 @@
 
         ctx.save();
 
+        const centerX = this.x + this.width / 2;
+        const headY = this.y + 16;
+        const bodyY = this.y + 42;
+
+        let bodyColor = this.color;
+
         if (this.isBlocking) {
-          ctx.fillStyle = '#3498db';
-        } else if (this.isAttacking) {
-          ctx.fillStyle = '#f1c40f';
-        } else {
-          ctx.fillStyle = this.color;
+          bodyColor = '#3498db';
         }
-
-        ctx.fillRect(this.x, this.y, this.width, this.height);
-
-        ctx.fillStyle = 'white';
-        ctx.fillRect(this.x + 15, this.y + 20, 8, 8);
-        ctx.fillRect(this.x + 37, this.y + 20, 8, 8);
 
         if (this.isAttacking) {
-          ctx.fillStyle = '#ff5555';
-          const armX = this.facingDirection === 1
-            ? this.x + this.width
-            : this.x - 20;
-
-          ctx.fillRect(armX, this.y + 35, 20, 10);
+          bodyColor = '#f1c40f';
         }
 
-        if (this.isBlocking) {
-          ctx.strokeStyle = '#9be7ff';
-          ctx.lineWidth = 5;
+        // Shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.beginPath();
+        ctx.ellipse(centerX, groundY + 6, 28, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
 
-          const shieldX = this.facingDirection === 1
-            ? this.x + this.width + 8
-            : this.x - 18;
+        // Head
+        ctx.fillStyle = '#f1c27d';
+        ctx.beginPath();
+        ctx.arc(centerX, headY, 16, 0, Math.PI * 2);
+        ctx.fill();
 
+        // Hair
+        ctx.fillStyle = '#222';
+        ctx.beginPath();
+        ctx.arc(centerX, headY - 4, 16, Math.PI, Math.PI * 2);
+        ctx.fill();
+
+        // Eyes
+        ctx.fillStyle = '#111';
+        ctx.beginPath();
+        ctx.arc(centerX - 5, headY - 2, 2, 0, Math.PI * 2);
+        ctx.arc(centerX + 5, headY - 2, 2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Torso
+        ctx.fillStyle = bodyColor;
+        ctx.fillRect(centerX - 16, bodyY, 32, 42);
+
+        // Belt
+        ctx.fillStyle = '#111';
+        ctx.fillRect(centerX - 16, bodyY + 32, 32, 6);
+
+        // Arms
+        ctx.strokeStyle = bodyColor;
+        ctx.lineWidth = 10;
+        ctx.lineCap = 'round';
+
+        const attackExtend = this.isAttacking ? 26 : 0;
+        const frontArmX = centerX + (this.facingDirection * (24 + attackExtend));
+        const backArmX = centerX - (this.facingDirection * 18);
+
+        // Back arm
+        ctx.beginPath();
+        ctx.moveTo(centerX, bodyY + 10);
+        ctx.lineTo(backArmX, bodyY + 28);
+        ctx.stroke();
+
+        // Front arm
+        ctx.beginPath();
+        ctx.moveTo(centerX, bodyY + 10);
+        ctx.lineTo(frontArmX, bodyY + 18);
+        ctx.stroke();
+
+        // Hands
+        ctx.fillStyle = '#f1c27d';
+        ctx.beginPath();
+        ctx.arc(frontArmX, bodyY + 18, 5, 0, Math.PI * 2);
+        ctx.arc(backArmX, bodyY + 28, 5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Legs
+        ctx.strokeStyle = '#444';
+        ctx.lineWidth = 12;
+
+        const legSpread = Math.abs(this.velocityX) > 0 ? 10 : 4;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - 8, bodyY + 42);
+        ctx.lineTo(centerX - legSpread, bodyY + 78);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + 8, bodyY + 42);
+        ctx.lineTo(centerX + legSpread, bodyY + 78);
+        ctx.stroke();
+
+        // Feet
+        ctx.strokeStyle = '#ddd';
+        ctx.lineWidth = 5;
+
+        ctx.beginPath();
+        ctx.moveTo(centerX - legSpread - 8, bodyY + 78);
+        ctx.lineTo(centerX - legSpread + 6, bodyY + 78);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + legSpread - 8, bodyY + 78);
+        ctx.lineTo(centerX + legSpread + 6, bodyY + 78);
+        ctx.stroke();
+
+        // Attack effect
+        if (this.isAttacking) {
+          ctx.strokeStyle = '#ff5555';
+          ctx.lineWidth = 4;
           ctx.beginPath();
-          ctx.arc(shieldX, this.y + 50, 18, 0, Math.PI * 2);
+          ctx.arc(frontArmX, bodyY + 18, 14, 0, Math.PI * 1.5);
+          ctx.stroke();
+        }
+
+        // Blocking shield
+        if (this.isBlocking) {
+          const shieldX = centerX + this.facingDirection * 34;
+
+          ctx.fillStyle = 'rgba(120,220,255,0.35)';
+          ctx.beginPath();
+          ctx.arc(shieldX, bodyY + 16, 18, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#9be7ff';
+          ctx.lineWidth = 3;
           ctx.stroke();
         }
 
