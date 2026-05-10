@@ -37,6 +37,15 @@ export const characterTypes = {
     animal: true,
     maxHealth: 40,
     speed: 4
+  },
+  bug: {
+    name: 'Bug',
+    color: '#4db84d',
+    headColor: '#66c2ff',
+    hair: '#1a1a1a',
+    animal: true,
+    maxHealth: 10,
+    speed: 2
   }
 };
 

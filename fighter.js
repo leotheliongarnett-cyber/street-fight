@@ -516,6 +516,70 @@ export class Fighter {
           ctx.stroke();
         }
       }
+    } else if (this.characterType === 'bug') {
+      // BUG
+      ctx.fillStyle = this.character.color;
+      ctx.beginPath();
+      ctx.ellipse(centerX, bodyY + 24, 22, 28, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Head
+      ctx.fillStyle = this.character.headColor;
+      ctx.beginPath();
+      ctx.arc(centerX, headY + 4, 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Eyes
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.arc(centerX - 5, headY, 3, 0, Math.PI * 2);
+      ctx.arc(centerX + 5, headY, 3, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Antennae
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(centerX - 4, headY - 10);
+      ctx.quadraticCurveTo(centerX - 10, headY - 20, centerX - 14, headY - 26);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 4, headY - 10);
+      ctx.quadraticCurveTo(centerX + 10, headY - 20, centerX + 14, headY - 26);
+      ctx.stroke();
+
+      // Legs
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 4;
+      const legOffset = Math.sin(Date.now() / 150) * 3;
+
+      for (let i = -1; i <= 1; i++) {
+        ctx.beginPath();
+        ctx.moveTo(centerX - 16, bodyY + 12 + i * 6);
+        ctx.lineTo(centerX - 28 + legOffset, bodyY + 32 + i * 6);
+        ctx.stroke();
+
+        ctx.beginPath();
+        ctx.moveTo(centerX + 16, bodyY + 12 + i * 6);
+        ctx.lineTo(centerX + 28 - legOffset, bodyY + 32 + i * 6);
+        ctx.stroke();
+      }
+
+      // Attack mandibles
+      const mandibleExtend = this.isAttacking ? 15 : 0;
+      ctx.strokeStyle = '#1a1a1a';
+      ctx.lineWidth = 3;
+
+      ctx.beginPath();
+      ctx.moveTo(centerX - 6, headY + 8);
+      ctx.lineTo(centerX - 6 - mandibleExtend * this.facingDirection, headY + 14);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(centerX + 6, headY + 8);
+      ctx.lineTo(centerX + 6 - mandibleExtend * this.facingDirection, headY + 14);
+      ctx.stroke();
     }
 
     if (!this.weapon.heal) {

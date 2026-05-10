@@ -57,7 +57,7 @@ function createCardButton(characterKey, character, onCharacterSelect) {
   button.dataset.character = characterKey;
   button.innerHTML = `
     <div class="emoji">
-      ${characterKey === 'human' ? '🧍' : characterKey === 'gorilla' ? '🦍' : characterKey === 'tiger' ? '🐅' : '🦁'}
+      ${characterKey === 'human' ? '🧍' : characterKey === 'gorilla' ? '🦍' : characterKey === 'tiger' ? '🐅' : characterKey === 'lion' ? '🦁' : '🐛'}
     </div>
     ${character.name}
   `;
