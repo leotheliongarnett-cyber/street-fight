@@ -12,7 +12,8 @@
     }
 
     body {
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
       background: #111;
       font-family: Arial, sans-serif;
     }
@@ -80,6 +81,13 @@
 </head>
 <body>
   <div class="ui">
+    <div style="position:absolute; top:90px; left:30px; color:gold; font-size:24px; font-weight:bold; text-shadow:2px 2px 4px black;">
+      🪙 P1 Coins: <span id="p1Coins">0</span>
+    </div>
+
+    <div style="position:absolute; top:90px; right:30px; color:gold; font-size:24px; font-weight:bold; text-shadow:2px 2px 4px black; text-align:right;">
+      🪙 P2 Coins: <span id="p2Coins">0</span>
+    </div>
     <div class="health-container">
       <div class="health-label">Player 2</div>
       <div class="health-bar">
@@ -96,6 +104,59 @@
   </div>
 
   <div id="winnerText"></div>
+
+  <div id="menuScreen" style="position:absolute; inset:0; background:rgba(0,0,0,0.92); display:flex; flex-direction:column; align-items:center; justify-content:flex-start; color:white; z-index:10; overflow-y:auto; padding:40px 20px 120px 20px;">
+    <h1 style="font-size:56px; margin-bottom:12px;">Street Fight</h1>
+    <p style="margin-bottom:40px; font-size:20px; opacity:0.8;">Choose your fighters</p>
+
+    <div style="display:flex; gap:80px; flex-wrap:wrap; justify-content:center;">
+      <div>
+        <h2 style="margin-bottom:18px; text-align:center;">Player 1</h2>
+        <div id="p1Select" style="display:grid; grid-template-columns:repeat(2, 170px); gap:18px;"></div>
+      </div>
+
+      <div>
+        <h2 style="margin-bottom:18px; text-align:center;">Player 2</h2>
+        <div id="p2Select" style="display:grid; grid-template-columns:repeat(2, 170px); gap:18px;"></div>
+      </div>
+    </div>
+
+    <label style="margin-top:30px; font-size:22px; display:flex; align-items:center; gap:12px;">
+      <input type="checkbox" id="cpuToggle" checked style="transform:scale(1.5);">
+      Player 2 Controlled by CPU
+    </label>
+
+    <div style="margin-top:20px; display:flex; align-items:center; gap:14px; font-size:22px;">
+      <span>CPU Difficulty:</span>
+      <select id="difficultySelect" style="padding:10px 16px; border-radius:10px; font-size:20px; border:none;">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+        <option value="extra">Extra Hard</option>
+      </select>
+    </div>
+
+    <label style="margin-top:30px; font-size:22px; display:flex; align-items:center; gap:12px;">
+      <input type="checkbox" id="cpuToggle" checked style="transform:scale(1.5);">
+      Player 2 Controlled by CPU
+    </label>
+
+    <div style="display:flex; gap:80px; margin-top:35px; flex-wrap:wrap; justify-content:center;">
+      <div>
+        <h2 style="margin-bottom:18px; text-align:center;">Player 1 Weapon</h2>
+        <div id="p1WeaponSelect" style="display:grid; grid-template-columns:repeat(2, 180px); gap:18px;"></div>
+      </div>
+
+      <div>
+        <h2 style="margin-bottom:18px; text-align:center;">Player 2 Weapon</h2>
+        <div id="p2WeaponSelect" style="display:grid; grid-template-columns:repeat(2, 180px); gap:18px;"></div>
+      </div>
+    </div>
+
+    <button id="startButton" style="margin-top:45px; padding:16px 40px; font-size:24px; border:none; border-radius:12px; background:#f1c40f; cursor:pointer; font-weight:bold;">
+      Start Fight
+    </button>
+  </div>
 
   <canvas id="game"></canvas>
 
@@ -115,27 +176,248 @@
     resize();
 
     const gravity = 0.8;
+
+    const characterTypes = {
+      human: {
+        name: 'Human',
+        color: '#e74c3c',
+        headColor: '#f1c27d',
+        hair: '#222',
+        animal: false,
+        maxHealth: 15,
+        speed: 8
+      },
+      gorilla: {
+        name: 'Gorilla',
+        color: '#555',
+        headColor: '#444',
+        hair: '#222',
+        animal: true,
+        maxHealth: 50,
+        speed: 2
+      },
+      tiger: {
+        name: 'Tiger',
+        color: '#ff9933',
+        headColor: '#ff9933',
+        hair: '#111',
+        animal: true,
+        maxHealth: 30,
+        speed: 6
+      },
+      lion: {
+        name: 'Lion',
+        color: '#c89b3c',
+        headColor: '#d9b15f',
+        hair: '#5a3b11',
+        animal: true,
+        maxHealth: 40,
+        speed: 4
+      }
+    };
     const floorHeight = 80;
+
+    const platforms = [
+      {
+        x: () => canvas.width * 0.22,
+        y: () => groundY - 140,
+        width: 220,
+        height: 18
+      },
+      {
+        x: () => canvas.width * 0.62,
+        y: () => groundY - 150,
+        width: 220,
+        height: 18
+      }
+    ];
 
     const keys = {};
     let gameOver = false;
+    let cpuEnabled = true;
+    let cpuDifficulty = 'medium';
+
+    let selectedP1 = 'human';
+    let selectedP2 = 'gorilla';
+    let selectedWeapon1 = 'sword';
+    let selectedWeapon2 = 'katana';
+
+    const weapons = {
+      sword: {
+        name: 'Classic Sword',
+        damage: 5,
+        range: 80,
+        color: '#dfe6e9',
+        heal: false
+      },
+      katana: {
+        name: 'Katana',
+        damage: 2.5,
+        range: 160,
+        color: '#c7ecee',
+        heal: false
+      },
+      knife: {
+        name: 'Knife',
+        damage: 10,
+        range: 40,
+        color: '#b2bec3',
+        heal: false
+      },
+      shot: {
+        name: 'Shot',
+        damage: 1,
+        range: 80,
+        color: '#2ecc71',
+        heal: true
+      }
+    };
+
+    function createCharacterMenus() {
+      const p1 = document.getElementById('p1Select');
+      const p2 = document.getElementById('p2Select');
+
+      Object.entries(characterTypes).forEach(([key, character]) => {
+        const makeCard = (player, selectedRef) => {
+          const card = document.createElement('button');
+          card.style.cssText = `
+            background:${character.color};
+            border:4px solid transparent;
+            border-radius:18px;
+            height:160px;
+            color:white;
+            font-size:22px;
+            font-weight:bold;
+            cursor:pointer;
+            box-shadow:0 8px 18px rgba(0,0,0,0.35);
+          `;
+
+          card.innerHTML = `
+            <div style="font-size:56px; margin-bottom:8px;">
+              ${key === 'human' ? '🧍' : key === 'gorilla' ? '🦍' : key === 'tiger' ? '🐅' : '🦁'}
+            </div>
+            ${character.name}
+          `;
+
+          card.onclick = () => {
+            if (player === 1) {
+              selectedP1 = key;
+              refreshSelections();
+            } else {
+              selectedP2 = key;
+              refreshSelections();
+            }
+          };
+
+          card.dataset.player = player;
+          card.dataset.character = key;
+
+          return card;
+        };
+
+        p1.appendChild(makeCard(1));
+        p2.appendChild(makeCard(2));
+      });
+
+      refreshSelections();
+    }
+
+    function refreshSelections() {
+      document.querySelectorAll('#p1Select button').forEach(btn => {
+        btn.style.borderColor = btn.dataset.character === selectedP1 ? 'white' : 'transparent';
+        btn.style.transform = btn.dataset.character === selectedP1 ? 'scale(1.06)' : 'scale(1)';
+      });
+
+      document.querySelectorAll('#p2Select button').forEach(btn => {
+        btn.style.borderColor = btn.dataset.character === selectedP2 ? 'white' : 'transparent';
+        btn.style.transform = btn.dataset.character === selectedP2 ? 'scale(1.06)' : 'scale(1)';
+      });
+    }
+
+    createCharacterMenus();
+
+    function createWeaponMenus() {
+      const p1 = document.getElementById('p1WeaponSelect');
+      const p2 = document.getElementById('p2WeaponSelect');
+
+      Object.entries(weapons).forEach(([key, weapon]) => {
+        const createBtn = (player) => {
+          const btn = document.createElement('button');
+          btn.style.cssText = `
+            background:#222;
+            color:white;
+            border:4px solid transparent;
+            border-radius:18px;
+            padding:18px;
+            font-size:18px;
+            cursor:pointer;
+            min-height:150px;
+          `;
+
+          btn.innerHTML = `
+            <div style="font-size:44px; margin-bottom:10px;">
+              ${key === 'sword' ? '🗡️' : key === 'katana' ? '⚔️' : key === 'knife' ? '🔪' : '💉'}
+            </div>
+            <div style="font-weight:bold; margin-bottom:6px;">${weapon.name}</div>
+            <div style="font-size:14px; opacity:0.8;">
+              ${weapon.heal ? 'Heal + fists' : weapon.damage + ' damage'}
+            </div>
+          `;
+
+          btn.onclick = () => {
+            if (player === 1) {
+              selectedWeapon1 = key;
+            } else {
+              selectedWeapon2 = key;
+            }
+            refreshWeaponSelections();
+          };
+
+          btn.dataset.player = player;
+          btn.dataset.weapon = key;
+
+          return btn;
+        };
+
+        p1.appendChild(createBtn(1));
+        p2.appendChild(createBtn(2));
+      });
+
+      refreshWeaponSelections();
+    }
+
+    function refreshWeaponSelections() {
+      document.querySelectorAll('#p1WeaponSelect button').forEach(btn => {
+        btn.style.borderColor = btn.dataset.weapon === selectedWeapon1 ? '#f1c40f' : 'transparent';
+      });
+
+      document.querySelectorAll('#p2WeaponSelect button').forEach(btn => {
+        btn.style.borderColor = btn.dataset.weapon === selectedWeapon2 ? '#f1c40f' : 'transparent';
+      });
+    }
+
+    createWeaponMenus();
 
     class Fighter {
       constructor(options) {
         Object.assign(this, options);
+
+        this.characterType = this.characterType || 'human';
+        this.character = characterTypes[this.characterType] || characterTypes.human;
+        this.color = this.character.color;
 
         this.width = 60;
         this.height = 110;
         this.velocityX = 0;
         this.velocityY = 0;
 
-        this.speed = 6;
+        this.speed = this.character.speed || 6;
         this.jumpStrength = 16;
 
         this.onGround = false;
 
-        this.maxHealth = 10;
-        this.health = 10;
+        this.maxHealth = this.character.maxHealth || 10;
+        this.health = this.maxHealth;
 
         this.isBlocking = false;
         this.isAttacking = false;
@@ -146,6 +428,14 @@
         this.freezeFrames = 0;
         this.invulnerableFrames = 0;
         this.flashTimer = 0;
+
+        this.cpuJumpTimer = 0;
+
+        this.weaponType = this.weaponType || 'sword';
+        this.weapon = weapons[this.weaponType];
+        this.healCooldown = 0;
+
+        this.coins = 0;
       }
 
       get facingDirection() {
@@ -153,7 +443,11 @@
       }
 
       update() {
+        if (this.isCPU && !gameOver) {
+          this.handleCPU();
+        }
         if (this.attackCooldown > 0) this.attackCooldown--;
+        if (this.healCooldown > 0) this.healCooldown--;
         if (this.freezeFrames > 0) {
           this.freezeFrames--;
           return;
@@ -180,6 +474,25 @@
         }
 
         this.x = Math.max(0, Math.min(canvas.width - this.width, this.x));
+
+        // Platform collision
+        for (const platform of platforms) {
+          const px = platform.x();
+          const py = platform.y();
+
+          const touchingPlatform =
+            this.x + this.width > px &&
+            this.x < px + platform.width &&
+            this.y + this.height >= py &&
+            this.y + this.height <= py + 22 &&
+            this.velocityY >= 0;
+
+          if (touchingPlatform) {
+            this.y = py - this.height;
+            this.velocityY = 0;
+            this.onGround = true;
+          }
+        }
       }
 
       handleMovement() {
@@ -200,6 +513,83 @@
         }
       }
 
+      handleCPU() {
+        const settings = {
+          easy: {
+            attackChance: 0.025,
+            blockChance: 0.03,
+            reactionDistance: 75,
+            jumpChance: 0.008,
+            aggression: 0.7
+          },
+          medium: {
+            attackChance: 0.05,
+            blockChance: 0.06,
+            reactionDistance: 85,
+            jumpChance: 0.015,
+            aggression: 1
+          },
+          hard: {
+            attackChance: 0.09,
+            blockChance: 0.1,
+            reactionDistance: 100,
+            jumpChance: 0.02,
+            aggression: 1.2
+          },
+          extra: {
+            attackChance: 0.15,
+            blockChance: 0.16,
+            reactionDistance: 115,
+            jumpChance: 0.03,
+            aggression: 1.35
+          }
+        };
+
+        const ai = settings[cpuDifficulty];
+        this.speed = 6 * ai.aggression;
+        const enemy = opponentOf(this);
+        const distance = enemy.x - this.x;
+        const absDistance = Math.abs(distance);
+
+        keys[this.controls.left] = false;
+        keys[this.controls.right] = false;
+        keys[this.controls.block] = false;
+
+        if (this.freezeFrames > 0) return;
+
+        if (absDistance > ai.reactionDistance) {
+          if (distance > 0) {
+            keys[this.controls.right] = true;
+          } else {
+            keys[this.controls.left] = true;
+          }
+        }
+
+        if (absDistance < 45) {
+          if (distance > 0) {
+            keys[this.controls.left] = true;
+          } else {
+            keys[this.controls.right] = true;
+          }
+        }
+
+        if (enemy.isAttacking && Math.random() < ai.blockChance) {
+          keys[this.controls.block] = true;
+        }
+
+        this.cpuJumpTimer++;
+        if (this.cpuJumpTimer > 90 && Math.random() < ai.jumpChance) {
+          this.jump();
+          this.cpuJumpTimer = 0;
+        }
+
+        if (absDistance < ai.reactionDistance && !this.isBlocking) {
+          if (Math.random() < ai.attackChance) {
+            this.attack();
+          }
+        }
+      }
+
       jump() {
         if (this.onGround && !this.isBlocking && !this.isAttacking) {
           this.velocityY = -this.jumpStrength;
@@ -207,6 +597,14 @@
       }
 
       attack() {
+        if (this.weapon.heal) {
+          if (this.healCooldown <= 0) {
+            this.health = Math.min(this.maxHealth, this.health + this.maxHealth / 10);
+            this.healCooldown = 60;
+            updateHealthBars();
+    updateCoinDisplays();
+          }
+        }
         if (
           this.isAttacking ||
           this.attackCooldown > 0 ||
@@ -231,7 +629,7 @@
       checkHit() {
         const enemy = opponentOf(this);
 
-        const attackRange = 80;
+        const attackRange = this.weapon.range;
         const dx = enemy.x - this.x;
         const facingCorrectly = Math.sign(dx) === this.facingDirection;
         const closeEnough = Math.abs(dx) < attackRange;
@@ -244,13 +642,17 @@
           enemy.invulnerableFrames <= 0
         ) {
           if (!enemy.isBlocking) {
+            enemy.lastDamageTaken = this.weapon.damage;
             enemy.takeHit();
+
+            this.coins += this.weapon.damage;
+            updateCoinDisplays();
           }
         }
       }
 
       takeHit() {
-        this.health = Math.max(0, this.health - 1);
+        this.health = Math.max(0, this.health - this.lastDamageTaken);
         this.freezeFrames = 18;
         this.invulnerableFrames = 30;
         this.flashTimer = 0;
@@ -291,98 +693,263 @@
         ctx.ellipse(centerX, groundY + 6, 28, 8, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Head
-        ctx.fillStyle = '#f1c27d';
-        ctx.beginPath();
-        ctx.arc(centerX, headY, 16, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Hair
-        ctx.fillStyle = '#222';
-        ctx.beginPath();
-        ctx.arc(centerX, headY - 4, 16, Math.PI, Math.PI * 2);
-        ctx.fill();
-
-        // Eyes
-        ctx.fillStyle = '#111';
-        ctx.beginPath();
-        ctx.arc(centerX - 5, headY - 2, 2, 0, Math.PI * 2);
-        ctx.arc(centerX + 5, headY - 2, 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Torso
-        ctx.fillStyle = bodyColor;
-        ctx.fillRect(centerX - 16, bodyY, 32, 42);
-
-        // Belt
-        ctx.fillStyle = '#111';
-        ctx.fillRect(centerX - 16, bodyY + 32, 32, 6);
-
-        // Arms
-        ctx.strokeStyle = bodyColor;
-        ctx.lineWidth = 10;
-        ctx.lineCap = 'round';
-
-        const attackExtend = this.isAttacking ? 26 : 0;
-        const frontArmX = centerX + (this.facingDirection * (24 + attackExtend));
-        const backArmX = centerX - (this.facingDirection * 18);
-
-        // Back arm
-        ctx.beginPath();
-        ctx.moveTo(centerX, bodyY + 10);
-        ctx.lineTo(backArmX, bodyY + 28);
-        ctx.stroke();
-
-        // Front arm
-        ctx.beginPath();
-        ctx.moveTo(centerX, bodyY + 10);
-        ctx.lineTo(frontArmX, bodyY + 18);
-        ctx.stroke();
-
-        // Hands
-        ctx.fillStyle = '#f1c27d';
-        ctx.beginPath();
-        ctx.arc(frontArmX, bodyY + 18, 5, 0, Math.PI * 2);
-        ctx.arc(backArmX, bodyY + 28, 5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Legs
-        ctx.strokeStyle = '#444';
-        ctx.lineWidth = 12;
-
-        const legSpread = Math.abs(this.velocityX) > 0 ? 10 : 4;
-
-        ctx.beginPath();
-        ctx.moveTo(centerX - 8, bodyY + 42);
-        ctx.lineTo(centerX - legSpread, bodyY + 78);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(centerX + 8, bodyY + 42);
-        ctx.lineTo(centerX + legSpread, bodyY + 78);
-        ctx.stroke();
-
-        // Feet
-        ctx.strokeStyle = '#ddd';
-        ctx.lineWidth = 5;
-
-        ctx.beginPath();
-        ctx.moveTo(centerX - legSpread - 8, bodyY + 78);
-        ctx.lineTo(centerX - legSpread + 6, bodyY + 78);
-        ctx.stroke();
-
-        ctx.beginPath();
-        ctx.moveTo(centerX + legSpread - 8, bodyY + 78);
-        ctx.lineTo(centerX + legSpread + 6, bodyY + 78);
-        ctx.stroke();
-
-        // Attack effect
-        if (this.isAttacking) {
-          ctx.strokeStyle = '#ff5555';
-          ctx.lineWidth = 4;
+        if (this.characterType === 'human') {
+          // HUMAN
+          ctx.fillStyle = '#f1c27d';
           ctx.beginPath();
-          ctx.arc(frontArmX, bodyY + 18, 14, 0, Math.PI * 1.5);
+          ctx.arc(centerX, headY, 16, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#222';
+          ctx.beginPath();
+          ctx.arc(centerX, headY - 4, 16, Math.PI, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.arc(centerX - 5, headY - 2, 2, 0, Math.PI * 2);
+          ctx.arc(centerX + 5, headY - 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = bodyColor;
+          ctx.fillRect(centerX - 16, bodyY, 32, 42);
+
+          ctx.fillStyle = '#111';
+          ctx.fillRect(centerX - 16, bodyY + 32, 32, 6);
+
+          ctx.strokeStyle = bodyColor;
+          ctx.lineWidth = 10;
+          ctx.lineCap = 'round';
+
+          const attackExtend = this.isAttacking
+            ? (this.weaponType === 'katana' ? 70 : this.weaponType === 'knife' ? 10 : 26)
+            : 0;
+          const frontArmX = centerX + (this.facingDirection * (24 + attackExtend));
+          const backArmX = centerX - (this.facingDirection * 18);
+
+          ctx.beginPath();
+          ctx.moveTo(centerX, bodyY + 10);
+          ctx.lineTo(backArmX, bodyY + 28);
           ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX, bodyY + 10);
+          ctx.lineTo(frontArmX, bodyY + 18);
+          ctx.stroke();
+
+          ctx.fillStyle = '#f1c27d';
+          ctx.beginPath();
+          ctx.arc(frontArmX, bodyY + 18, 5, 0, Math.PI * 2);
+          ctx.arc(backArmX, bodyY + 28, 5, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#444';
+          ctx.lineWidth = 12;
+
+          const legSpread = Math.abs(this.velocityX) > 0 ? 10 : 4;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - 8, bodyY + 42);
+          ctx.lineTo(centerX - legSpread, bodyY + 78);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + 8, bodyY + 42);
+          ctx.lineTo(centerX + legSpread, bodyY + 78);
+          ctx.stroke();
+
+        } else if (this.characterType === 'gorilla') {
+          // GORILLA
+          ctx.fillStyle = '#3d3d3d';
+          ctx.beginPath();
+          ctx.roundRect(centerX - 26, bodyY - 4, 52, 54, 16);
+          ctx.fill();
+
+          ctx.fillStyle = '#555';
+          ctx.beginPath();
+          ctx.arc(centerX, headY + 6, 20, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#777';
+          ctx.beginPath();
+          ctx.ellipse(centerX, headY + 10, 12, 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.arc(centerX - 6, headY + 2, 2, 0, Math.PI * 2);
+          ctx.arc(centerX + 6, headY + 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+
+          ctx.strokeStyle = '#333';
+          ctx.lineWidth = 14;
+
+          const punch = this.isAttacking ? 30 : 0;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - 18, bodyY + 12);
+          ctx.lineTo(centerX - 32 - punch * this.facingDirection, bodyY + 38);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + 18, bodyY + 12);
+          ctx.lineTo(centerX + 32 + punch * this.facingDirection, bodyY + 38);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - 14, bodyY + 46);
+          ctx.lineTo(centerX - 20, bodyY + 82);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + 14, bodyY + 46);
+          ctx.lineTo(centerX + 20, bodyY + 82);
+          ctx.stroke();
+
+        } else {
+          // BIG CATS (TIGER / LION)
+          ctx.fillStyle = this.character.headColor;
+          ctx.beginPath();
+          ctx.ellipse(centerX, headY + 6, 20, 17, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (this.characterType === 'lion') {
+            ctx.strokeStyle = '#5a3b11';
+            ctx.lineWidth = 12;
+            ctx.beginPath();
+            ctx.arc(centerX, headY + 6, 24, 0, Math.PI * 2);
+            ctx.stroke();
+          }
+
+          // Ears
+          ctx.fillStyle = this.character.hair;
+          ctx.beginPath();
+          ctx.arc(centerX - 12, headY - 8, 6, 0, Math.PI * 2);
+          ctx.arc(centerX + 12, headY - 8, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Snout
+          ctx.fillStyle = '#f5deb3';
+          ctx.beginPath();
+          ctx.ellipse(centerX, headY + 10, 10, 7, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Eyes
+          ctx.fillStyle = '#111';
+          ctx.beginPath();
+          ctx.arc(centerX - 6, headY + 2, 2, 0, Math.PI * 2);
+          ctx.arc(centerX + 6, headY + 2, 2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Nose
+          ctx.beginPath();
+          ctx.arc(centerX, headY + 8, 2, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Body
+          ctx.fillStyle = bodyColor;
+          ctx.beginPath();
+          ctx.ellipse(centerX, bodyY + 28, 28, 24, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Tiger stripes
+          if (this.characterType === 'tiger') {
+            ctx.strokeStyle = '#111';
+            ctx.lineWidth = 3;
+            for (let i = -2; i <= 2; i++) {
+              ctx.beginPath();
+              ctx.moveTo(centerX + i * 8, bodyY + 8);
+              ctx.lineTo(centerX + i * 6, bodyY + 42);
+              ctx.stroke();
+            }
+          }
+
+          // Tail
+          ctx.strokeStyle = this.character.hair;
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.moveTo(centerX - this.facingDirection * 26, bodyY + 26);
+          ctx.quadraticCurveTo(
+            centerX - this.facingDirection * 50,
+            bodyY + 10,
+            centerX - this.facingDirection * 40,
+            bodyY + 44
+          );
+          ctx.stroke();
+
+          // Legs
+          ctx.strokeStyle = bodyColor;
+          ctx.lineWidth = 12;
+
+          const runOffset = Math.sin(Date.now() / 120) * 4 * (Math.abs(this.velocityX) > 0 ? 1 : 0);
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - 14, bodyY + 36);
+          ctx.lineTo(centerX - 18 + runOffset, bodyY + 82);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + 14, bodyY + 36);
+          ctx.lineTo(centerX + 18 - runOffset, bodyY + 82);
+          ctx.stroke();
+
+          // Front paws / attack
+          const clawReach = this.isAttacking ? 28 : 0;
+
+          ctx.beginPath();
+          ctx.moveTo(centerX + this.facingDirection * 18, bodyY + 18);
+          ctx.lineTo(centerX + this.facingDirection * (36 + clawReach), bodyY + 26);
+          ctx.stroke();
+
+          ctx.beginPath();
+          ctx.moveTo(centerX - this.facingDirection * 12, bodyY + 18);
+          ctx.lineTo(centerX - this.facingDirection * 28, bodyY + 30);
+          ctx.stroke();
+
+          if (this.isAttacking) {
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+
+            for (let i = -1; i <= 1; i++) {
+              ctx.beginPath();
+              ctx.moveTo(centerX + this.facingDirection * (42 + clawReach), bodyY + 20 + i * 5);
+              ctx.lineTo(centerX + this.facingDirection * (54 + clawReach), bodyY + 16 + i * 5);
+              ctx.stroke();
+            }
+          }
+        }
+
+        // Weapon rendering
+        if (!this.weapon.heal) {
+          ctx.strokeStyle = this.weapon.color;
+          ctx.lineWidth = this.weaponType === 'knife' ? 5 : 7;
+
+          const weaponLength =
+            this.weaponType === 'katana'
+              ? 58
+              : this.weaponType === 'knife'
+              ? 24
+              : 40;
+
+          const wx = centerX + this.facingDirection * 20;
+          const wy = bodyY + 18;
+
+          ctx.beginPath();
+          ctx.moveTo(wx, wy);
+          ctx.lineTo(wx + this.facingDirection * weaponLength, wy - 10);
+          ctx.stroke();
+        } else {
+          // Fists for shot class
+          ctx.fillStyle = '#f1c27d';
+          ctx.beginPath();
+          ctx.arc(centerX + this.facingDirection * 24, bodyY + 18, 6, 0, Math.PI * 2);
+          ctx.fill();
+
+          if (this.healCooldown > 0) {
+            ctx.fillStyle = '#2ecc71';
+            ctx.font = '16px Arial';
+            ctx.fillText('+HP', centerX - 14, this.y - 10);
+          }
         }
 
         // Blocking shield
@@ -400,8 +967,46 @@
         }
 
         ctx.restore();
+
+        // Debug fallback body so fighters are always visible
+        if (!this.character) {
+          ctx.fillStyle = 'magenta';
+          ctx.fillRect(this.x, this.y, 40, 80);
+        }
       }
     }
+
+    function startGame() {
+      cpuEnabled = document.getElementById('cpuToggle').checked;
+      cpuDifficulty = document.getElementById('difficultySelect').value;
+
+      player1.characterType = selectedP1;
+      player1.character = characterTypes[selectedP1];
+      player1.weaponType = selectedWeapon1;
+      player1.weapon = weapons[selectedWeapon1];
+      player1.maxHealth = player1.character.maxHealth;
+      player1.health = player1.maxHealth;
+      player1.speed = player1.character.speed;
+      player1.coins = 0;
+      player1.color = characterTypes[selectedP1].color;
+
+      player2.characterType = selectedP2;
+      player2.character = characterTypes[selectedP2];
+      player2.weaponType = selectedWeapon2;
+      player2.weapon = weapons[selectedWeapon2];
+      player2.maxHealth = player2.character.maxHealth;
+      player2.health = player2.maxHealth;
+      player2.speed = player2.character.speed;
+      player2.coins = 0;
+
+      updateHealthBars();
+      player2.color = characterTypes[selectedP2].color;
+      player2.isCPU = cpuEnabled;
+
+      document.getElementById('menuScreen').style.display = 'none';
+    }
+
+    document.getElementById('startButton').addEventListener('click', startGame);
 
     const player1 = new Fighter({
       x: canvas.width - 180,
@@ -420,6 +1025,8 @@
       x: 120,
       y: groundY - 110,
       color: '#2ecc71',
+      characterType: 'gorilla',
+      isCPU: true,
       controls: {
         left: 'a',
         right: 'd',
@@ -433,9 +1040,14 @@
       return player === player1 ? player2 : player1;
     }
 
+    function updateCoinDisplays() {
+      document.getElementById('p1Coins').textContent = Math.floor(player1.coins);
+      document.getElementById('p2Coins').textContent = Math.floor(player2.coins);
+    }
+
     function updateHealthBars() {
-      document.getElementById('p1Health').style.width = `${player1.health * 10}%`;
-      document.getElementById('p2Health').style.width = `${player2.health * 10}%`;
+      document.getElementById('p1Health').style.width = `${(player1.health / player1.maxHealth) * 100}%`;
+      document.getElementById('p2Health').style.width = `${(player2.health / player2.maxHealth) * 100}%`;
     }
 
     updateHealthBars();
@@ -451,6 +1063,8 @@
       `;
     }
 
+    document.getElementById('startButton').addEventListener('click', startGame);
+
     window.addEventListener('keydown', (e) => {
       keys[e.key] = true;
 
@@ -460,7 +1074,7 @@
         player1.jump();
       }
 
-      if (e.key === player2.controls.jump) {
+      if (!player2.isCPU && e.key === player2.controls.jump) {
         player2.jump();
       }
 
@@ -468,7 +1082,7 @@
         player1.attack();
       }
 
-      if (e.key === player2.controls.attack) {
+      if (!player2.isCPU && e.key === player2.controls.attack) {
         player2.attack();
       }
     });
@@ -476,6 +1090,30 @@
     window.addEventListener('keyup', (e) => {
       keys[e.key] = false;
     });
+
+    function drawPlatforms() {
+      for (const platform of platforms) {
+        const px = platform.x();
+        const py = platform.y();
+
+        // Platform shadow
+        ctx.fillStyle = 'rgba(0,0,0,0.25)';
+        ctx.fillRect(px + 8, py + 8, platform.width, platform.height);
+
+        // Main platform
+        ctx.fillStyle = '#6b4f2a';
+        ctx.fillRect(px, py, platform.width, platform.height);
+
+        // Top highlight
+        ctx.fillStyle = '#9b7440';
+        ctx.fillRect(px, py, platform.width, 5);
+
+        // Supports
+        ctx.fillStyle = '#4a341c';
+        ctx.fillRect(px + 20, py + platform.height, 10, 50);
+        ctx.fillRect(px + platform.width - 30, py + platform.height, 10, 50);
+      }
+    }
 
     function drawBackground() {
       ctx.fillStyle = '#222';
@@ -492,6 +1130,7 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       drawBackground();
+      drawPlatforms();
 
       player1.update();
       player2.update();
