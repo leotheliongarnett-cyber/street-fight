@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Street Fight</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="ui">
+    <div class="coins-label coins-left">
+      🪙 P1 Coins: <span id="p1Coins">0</span>
+    </div>
+
+    <div class="coins-label coins-right">
+      🪙 P2 Coins: <span id="p2Coins">0</span>
+    </div>
+
+    <div class="health-container">
+      <div class="health-label">Player 2</div>
+      <div class="health-bar"><div class="health-fill" id="p2Health"></div></div>
+    </div>
+
+    <div class="health-container">
+      <div class="health-label health-label-right">Player 1</div>
+      <div class="health-bar"><div class="health-fill" id="p1Health"></div></div>
+    </div>
+  </div>
+
+  <div id="winnerText" class="winner-text"></div>
+
+  <div id="menuScreen" class="menu-screen">
+    <h1>Street Fight</h1>
+    <p>Choose your fighters</p>
+
+    <div class="menu-grid">
+      <div class="player-menu">
+        <h2>Player 1</h2>
+        <div id="p1Select" class="selection-grid"></div>
+      </div>
+
+      <div class="player-menu">
+        <h2>Player 2</h2>
+        <div id="p2Select" class="selection-grid"></div>
+      </div>
+    </div>
+
+    <label class="toggle-row">
+      <input type="checkbox" id="cpuToggle" checked />
+      Player 2 Controlled by CPU
+    </label>
+
+    <div class="difficulty-row">
+      <span>CPU Difficulty:</span>
+      <select id="difficultySelect">
+        <option value="easy">Easy</option>
+        <option value="medium" selected>Medium</option>
+        <option value="hard">Hard</option>
+        <option value="extra">Extra Hard</option>
+      </select>
+    </div>
+
+    <div class="menu-grid weapons-grid">
+      <div class="player-menu">
+        <h2>Player 1 Weapon</h2>
+        <div id="p1WeaponSelect" class="selection-grid"></div>
+      </div>
+
+      <div class="player-menu">
+        <h2>Player 2 Weapon</h2>
+        <div id="p2WeaponSelect" class="selection-grid"></div>
+      </div>
+    </div>
+
+    <button id="startButton" class="primary-button">Start Fight</button>
+  </div>
+
+  <canvas id="game"></canvas>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
